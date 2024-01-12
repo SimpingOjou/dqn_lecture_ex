@@ -1,5 +1,7 @@
 import torch
 import numpy as np
+import sys
+
 from .memory import ReplyMemory
 from .exploration import EpsilonGreedy
 from .rl_algo import LearnDQN
@@ -36,12 +38,25 @@ class AgentOffPolicy:
             action: the choosen action.
         """
         action = self.exploration.random_action()
-        # TODO comupute the action if needed
+        # TODO compute the action if needed
+        #here?
+        if action is None:
+            expected_rew = self.net(torch.tensor(state))
+            action = torch.argmax(expected_rew, dim=0).item()
+
+        return action
+
 
     def learn(self) -> None:
         """Takes care of the learning of the network."""
         # TODO get the batches from the memory
+        #self.memory.batch(self)
         # TODO compute q and q target
+
+        states, actions, rewards, states_, dones = self.memory.batch()
+        for b in range(self.memory.batch_numbers):
+            q, qt = self.learn_algo(self.net, states[b], actions[b], rewards[b], states_[b], dones[b])
+            self.net.learn(q, qt)
         # TODO train the network
        
     def memory_add(self, state: np.array, action: int, reward: float, state_: np.array, done: int) -> None:
